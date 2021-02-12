@@ -13,6 +13,17 @@ window.addEventListener('DOMContentLoaded', async function(event) {
   //   db.collection('posts').add(). Along withthe username and image 
   //   URL, add a "likes" field and set it to 0; we'll use this later.
   // - Verify (in Firebase) that records are being added.
+  let form = document.querySelector(`form`)
+  form.addEventListener(`submit`, async function(event){
+    event.preventDefault()
+    console.log(`post submitted`)
+  })
+
+  let username = document.querySelector('#username').value
+  let imageUrl = document.querySelector('#image-url').value
+  console.log(`username is ${username}`)
+  console.log(`image url is ${imageUrl}`)
+  await db.collection('kellogram').add({username: username, imageUrl: imageUrl, likes: 0})
   
   // Step 2: Read existing posts from Firestore and display them
   // when the page is loaded
@@ -24,23 +35,63 @@ window.addEventListener('DOMContentLoaded', async function(event) {
   //   to the page inside the provided "posts" div; sample code
   //   provided:
   //
-  //   document.querySelector('.posts').insertAdjacentHTML('beforeend', `
-  //     <div class="md:mt-16 mt-8 space-y-8">
-  //       <div class="md:mx-0 mx-4">
-  //         <span class="font-bold text-xl">${postUsername}</span>
-  //       </div>
-  //
-  //       <div>
-  //         <img src="${postImageUrl}" class="w-full">
-  //       </div>
-  //  
-  //       <div class="text-3xl md:mx-0 mx-4">
-  //         <button class="like-button">❤️</button>
-  //         <span class="likes">0</span>
-  //       </div>
-  //     </div>
-  //   `)
+    // document.querySelector('.posts').insertAdjacentHTML('beforeend', `
+    //   <div class="md:mt-16 mt-8 space-y-8">
+    //     <div class="md:mx-0 mx-4">
+    //       <span class="font-bold text-xl">${postUsername}</span>
+    //     </div>
   
+    //     <div>
+    //       <img src="${postImageUrl}" class="w-full">
+    //     </div>
+   
+    //     <div class="text-3xl md:mx-0 mx-4">
+    //       <button class="like-button">❤️</button>
+    //       <span class="likes">0</span>
+    //     </div>
+    //   </div>
+    // `)
+  
+  let postSnapshot = await db.collection('kellogram').get()
+  console.log(`Number to posts in collection: ${postSnapshot.size}`)
+
+  let posts = postSnapshot.docs
+  for (let i=0; i<posts.length; i++) {
+    let post = posts[i]
+    let postId = post.id
+    let postData = post.data()
+    let postUsername = postData.username
+    let postImageUrl = postData.imageUrl
+    let postLikes = postData.likes
+
+    document.querySelector(`.posts`).insertAdjacentHTML('beforeend', `
+    <div class="post-${postId} md:mt-16 mt-8 space-y-8">
+      <div class="md:mx-0 mx-4">
+        <span class="font-bold text-xl">${postUsername}</span>
+      </div>
+
+      <div>
+        <img src="${postImageUrl}" class="w-full">
+      </div>
+ 
+      <div class="text-3xl md:mx-0 mx-4">
+        <button class="like-button">❤️</button>
+        <span class="likes">${postLikes}</span>
+      </div>
+    </div>
+  `)
+  document.querySelector(`.post-${postId}.like-button`).addEventListener(`click`, function(event){
+    console.log(`Liked!: post-${postId}`)
+    let currentNumberOfLikes = document.querySelector(`.post-${postId}.likes`).innerHTML
+    console.log(currentNumberOfLikes)
+    let newNumberOfLikes = parseInt(currentNumberOfLikes) + 1
+    document.querySelector(`.post-${postId} .likes`).innerHTML = newNumberOfLikes
+
+    await db.collection(`kellogram`).doc(postId).update({likes: firebase.firestore.FieldValue.increment(1)})
+ 
+  
+  })
+
   // Step 3: Implement the "like" button
   // - In the code we wrote for Step 2, attach an event listener to
   //   every "like-button".
@@ -70,5 +121,10 @@ window.addEventListener('DOMContentLoaded', async function(event) {
   // - When adding a new post and refreshing the page, the new post
   //   gets added in what seems to be a somewhat "random" order (but 
   //   it's the same "random" order every time we refresh). Why is that?
-  //   How can we remedy? (HINT: involves a timestamp – see reference)
+  //   How can we remedy? (HINT: involves a timestamp – see reference)  // Step 1: Make the world's tiniest to-do app
+  
+
+
+
+  // Step 4: Add code to allow completing todos
 })
